@@ -36,7 +36,7 @@ class PWatch:
             if self.check_process(p):
                 try:
                     self.report(p)
-                except:
+                except Exception as e:
                     self.logger.warning("Cannot generate report for process {} ({}): {}"
                                         .format(p.name(), p.pid, e))
 
@@ -66,23 +66,47 @@ class PWatch:
         """
         import time
 
+        try:
+            io_counters = process.io_counters()
+        except:
+            from collections import namedtuple
+            IOCounters = namedtuple("IOCounters", 'read_count write_count read_bytes write_bytes')
+            io_counters= IOCounters(read_count=-1, write_count=-1,
+                                    read_bytes=0, write_bytes=0)
+
         r = ("Process {name}({pid}) detected excessive: "
              "mem: {mem:.2f} MB | "
              "cpu: {cpu:.2f}% | "
              "uptime: {uptime}s | "
+             "threads: {thr} | "
+             "FDs: {fds} | "
+             "IO reads: {ior} ({ior_sz:.2f} kB) | "
+             "IO writes: {iow} ({iow_sz:.2f} kB) | "
+             "context switches: {ctx_switches} | "
              "command: {cmd}"
              ).format(
                 name=process.name(),
                 pid=process.pid,
                 mem=float(process.memory_info().rss) / 1024 / 1024,
-                cpu=process.cpu_percent(interval=0.1),
+                cpu=process.last_cpu_percent,
                 uptime=int(time.time() - process.create_time()),
+                thr=process.num_threads(),
+                fds=process.num_fds(),
+                ior=io_counters.read_count,
+                iow=io_counters.write_count,
+                ior_sz=float(io_counters.read_bytes) / 1024,
+                iow_sz=float(io_counters.write_bytes) / 1024,
+                ctx_switches=process.num_ctx_switches().voluntary,
                 cmd=' '.join(process.cmdline()),
              )
         self.logger.error(r)
 
 
     def check_memory(self, process):
+        """
+        Check if process is above memory usage trigger
+
+        """
         if self.memory_trigger is None:
             return False
         try:
@@ -94,10 +118,15 @@ class PWatch:
 
 
     def check_cpu(self, process):
+        """
+        Check if process is above CPU usage trigger
+
+        """
         if self.cpu_trigger is None:
             return False
         try:
-            return process.cpu_percent() >= self.cpu_trigger
+            process.last_cpu_percent = process.cpu_percent()
+            return process.last_cpu_percent >= self.cpu_trigger
         except Exception as e:
             self.logger.warning("Error occured while checking CPU info for {} ({}): {}"
                                 .format(process.name(), process.pid, e))
@@ -106,7 +135,7 @@ class PWatch:
 
     def check_process(self, process):
         """
-        Check a process against memory and cpu trigger
+        Check a process against memory and cpu triggers
 
         """
         return self.check_memory(process) or self.check_cpu(process)
