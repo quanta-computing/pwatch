@@ -128,6 +128,7 @@ class PWatch:
             process.last_cpu_percent = process.cpu_percent()
             return process.last_cpu_percent >= self.cpu_trigger
         except Exception as e:
+            process.last_cpu_percent = -1
             self.logger.warning("Error occured while checking CPU info for {} ({}): {}"
                                 .format(process.name(), process.pid, e))
             return False
@@ -138,4 +139,4 @@ class PWatch:
         Check a process against memory and cpu triggers
 
         """
-        return self.check_memory(process) or self.check_cpu(process)
+        return True in [self.check_memory(process), self.check_cpu(process)]

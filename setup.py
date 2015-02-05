@@ -22,7 +22,7 @@ def requirements():
 
 setup(
     name='pwatch',
-    version='1.1.0',
+    version='1.1.3',
     description='Simple tool to watch and report processes with excessive resource usage',
     long_description=readme(),
     license='MIT',
