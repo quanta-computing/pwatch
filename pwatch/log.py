@@ -30,7 +30,6 @@ def setup_logger(debug=False, verbose=False, logger=None):
     logger = logger or get_logger()
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
     if verbose:
-        print("toto")
         logger.addHandler(logging.StreamHandler())
     try:
         handler = logging.handlers.SysLogHandler('/dev/log')
