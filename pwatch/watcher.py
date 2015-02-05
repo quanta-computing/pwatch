@@ -122,13 +122,13 @@ class PWatch:
         Check if process is above CPU usage trigger
 
         """
+        process.last_cpu_percent = -1
         if self.cpu_trigger is None:
             return False
         try:
             process.last_cpu_percent = process.cpu_percent()
             return process.last_cpu_percent >= self.cpu_trigger
         except Exception as e:
-            process.last_cpu_percent = -1
             self.logger.warning("Error occured while checking CPU info for {} ({}): {}"
                                 .format(process.name(), process.pid, e))
             return False
