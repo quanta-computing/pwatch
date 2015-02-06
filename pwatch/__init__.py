@@ -13,12 +13,15 @@ from .defaults import defaults
 
 def pwatch(interval=defaults.run_interval,
            memory_trigger=defaults.memory_trigger,
-           cpu_trigger=defaults.cpu_trigger):
+           cpu_trigger=defaults.cpu_trigger,
+           names=None, exclude=[],
+           watch_zombies=False):
     """
     The main function for pwatch: it looks each active process and report those
     who are using excessive memory
     This function will run forever until the process is killed
 
     """
-    p = PWatch(interval, memory_trigger, cpu_trigger)
+    p = PWatch(interval, memory_trigger, cpu_trigger,
+               names, exclude, watch_zombies)
     p.loop()

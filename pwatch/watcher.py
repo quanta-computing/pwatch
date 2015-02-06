@@ -13,7 +13,8 @@ class PWatch:
 
     """
 
-    def __init__(self, interval=None, memory_trigger=None, cpu_trigger=None):
+    def __init__(self, interval=None, memory_trigger=None, cpu_trigger=None,
+                 names=None, exclude=[], watch_zombies=False):
         """
         Initialize the process watcher
 
@@ -24,6 +25,9 @@ class PWatch:
         self.run_interval = interval or defaults.run_interval
         self.memory_trigger = memory_trigger
         self.cpu_trigger = cpu_trigger
+        self.names = names
+        self.exclude = exclude
+        self.watch_zombies = watch_zombies
 
 
     def run(self):
@@ -139,4 +143,9 @@ class PWatch:
         Check a process against memory and cpu triggers
 
         """
-        return True in [self.check_memory(process), self.check_cpu(process)]
+        if ((self.names is not None and process.name() not in self.names) or
+            (process.name() in self.exclude) or
+            (process.status() == psutil.STATUS_ZOMBIE and not self.watch_zombies)):
+            return False
+        else:
+            return True in [self.check_memory(process), self.check_cpu(process)]
